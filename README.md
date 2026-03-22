@@ -402,7 +402,7 @@ Please follow the existing code style and add documentation for new modules.
 
 <div align="center">
 
-[![Activity Graph](https://github-readme-activity-graph.vercel.app/graph?username=demiyan-dissanayake&theme=react-dark&bg_color=0a0e14&color=00e676&line=00e676&point=ffffff&area=true&hide_border=true)](https://github.com/demiyan-dissanayake)
+[![Activity Graph](https://github-readme-activity-graph.vercel.app/graph?username=Dexel-Software-Solutions&theme=react-dark&bg_color=0a0e14&color=00e676&line=00e676&point=ffffff&area=true&hide_border=true)](https://github.com/demiyan-dissanayake)
 
 </div>
 
