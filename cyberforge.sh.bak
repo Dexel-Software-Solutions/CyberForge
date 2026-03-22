@@ -1,0 +1,1881 @@
+#!/usr/bin/env bash
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║                                                                              ║
+# ║    ██████╗██╗   ██╗██████╗ ███████╗██████╗ ███████╗ ██████╗ ██████╗  ██████╗ ║
+# ║   ██╔════╝╚██╗ ██╔╝██╔══██╗██╔════╝██╔══██╗██╔════╝██╔═══██╗██╔══██╗██╔════╝ ║
+# ║   ██║      ╚████╔╝ ██████╔╝█████╗  ██████╔╝█████╗  ██║   ██║██████╔╝██║  ███╗║
+# ║   ██║       ╚██╔╝  ██╔══██╗██╔══╝  ██╔══██╗██╔══╝  ██║   ██║██╔══██╗██║   ██║║
+# ║   ╚██████╗   ██║   ██████╔╝███████╗██║  ██║██║     ╚██████╔╝██║  ██║╚██████╔╝║
+# ║    ╚═════╝   ╚═╝   ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝      ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ║
+# ║                                                                              ║
+# ║          Advanced Software Engineering & Cyber Security Toolkit              ║
+# ║                                                                              ║
+# ║   Developer  :  Demiyan Dissanayake                                          ║
+# ║   Version    :  2.0.0                                                        ║
+# ║   License    :  MIT                                                          ║
+# ║   Platform   :  Linux / macOS / WSL                                          ║
+# ║   GitHub     :  github.com/demiyan-dissanayake/cyberforge                    ║
+# ║                                                                              ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+#
+#  DISCLAIMER: This tool is built for EDUCATIONAL and AUTHORIZED TESTING only.
+#  Unauthorized use against systems you do not own is ILLEGAL. Use responsibly.
+#
+
+set -euo pipefail
+IFS=$'\n\t'
+
+# ═══════════════════════════════════════════════════════════════════
+#  METADATA
+# ═══════════════════════════════════════════════════════════════════
+readonly TOOL_NAME="CyberForge"
+readonly TOOL_VERSION="2.0.0"
+readonly TOOL_AUTHOR="Demiyan Dissanayake"
+readonly TOOL_YEAR="2025"
+readonly TOOL_GITHUB="github.com/demiyan-dissanayake/cyberforge"
+
+# ═══════════════════════════════════════════════════════════════════
+#  COLORS & STYLES
+# ═══════════════════════════════════════════════════════════════════
+R='\033[0m'          # Reset
+BOLD='\033[1m'
+DIM='\033[2m'
+ITALIC='\033[3m'
+BLINK='\033[5m'
+UNDERLINE='\033[4m'
+
+# Regular
+BLK='\033[0;30m'; RED='\033[0;31m'; GRN='\033[0;32m'; YLW='\033[0;33m'
+BLU='\033[0;34m'; MGT='\033[0;35m'; CYN='\033[0;36m'; WHT='\033[0;37m'
+
+# Bold
+BBLK='\033[1;30m'; BRED='\033[1;31m'; BGRN='\033[1;32m'; BYLW='\033[1;33m'
+BBLU='\033[1;34m'; BMGT='\033[1;35m'; BCYN='\033[1;36m'; BWHT='\033[1;37m'
+
+# Background
+BG_BLK='\033[40m'; BG_RED='\033[41m'; BG_GRN='\033[42m'; BG_YLW='\033[43m'
+BG_BLU='\033[44m'; BG_MGT='\033[45m'; BG_CYN='\033[46m'; BG_WHT='\033[47m'
+
+# ═══════════════════════════════════════════════════════════════════
+#  GLOBAL DIRS & LOGS
+# ═══════════════════════════════════════════════════════════════════
+CF_DIR="${HOME}/.cyberforge"
+CF_LOG="${CF_DIR}/cyberforge.log"
+CF_REPORTS="${CF_DIR}/reports"
+CF_WORDLISTS="${CF_DIR}/wordlists"
+CF_SESSIONS="${CF_DIR}/sessions"
+
+# ═══════════════════════════════════════════════════════════════════
+#  LOGGING
+# ═══════════════════════════════════════════════════════════════════
+_cf_log() {
+  local lvl="$1"; shift
+  local msg="$*"
+  local ts; ts="$(date '+%Y-%m-%d %H:%M:%S')"
+  echo "[$ts][$lvl] $msg" >> "$CF_LOG" 2>/dev/null || true
+}
+log_info()  { _cf_log "INFO"  "$@"; }
+log_warn()  { _cf_log "WARN"  "$@"; }
+log_error() { _cf_log "ERROR" "$@"; }
+log_audit() { _cf_log "AUDIT" "$@"; }
+
+# ═══════════════════════════════════════════════════════════════════
+#  INIT DIRS
+# ═══════════════════════════════════════════════════════════════════
+_init_dirs() {
+  mkdir -p "$CF_DIR" "$CF_REPORTS" "$CF_WORDLISTS" "$CF_SESSIONS"
+  touch "$CF_LOG"
+}
+
+# ═══════════════════════════════════════════════════════════════════
+#  PRINT HELPERS
+# ═══════════════════════════════════════════════════════════════════
+_line() {
+  local ch="${1:─}"; local w="${2:-78}"
+  printf '%*s\n' "$w" '' | tr ' ' "$ch"
+}
+
+_hdr() {
+  echo
+  echo -e "${BRED}$(_line '═' 78)${R}"
+  local pad=$(( (78 - ${#1}) / 2 ))
+  printf "${BRED}║${R}${BOLD}%*s%s%*s${BRED}║${R}\n" \
+    "$pad" "" "$1" "$(( 78 - pad - ${#1} ))" ""
+  echo -e "${BRED}$(_line '═' 78)${R}"
+  echo
+}
+
+_sec() {
+  echo
+  echo -e "${BCYN}  ╔══ ${BOLD}${1}${R}${BCYN} $(_line '═' $((68 - ${#1})))${R}"
+}
+
+_sec_end() {
+  echo -e "${BCYN}  ╚$(_line '═' 76)${R}"
+}
+
+_row() {
+  local lbl="$1" val="$2" col="${3:-$WHT}"
+  printf "  ${DIM}║${R}  ${BOLD}%-30s${R} ${col}%s${R}\n" "$lbl" "$val"
+}
+
+ok()    { echo -e "  ${BGRN}[✔]${R} ${BOLD}$*${R}"; }
+warn()  { echo -e "  ${BYLW}[!]${R} ${BOLD}$*${R}"; }
+err()   { echo -e "  ${BRED}[✘]${R} ${BOLD}$*${R}"; }
+info()  { echo -e "  ${BCYN}[i]${R} $*"; }
+found() { echo -e "  ${BMGT}[+]${R} ${BOLD}$*${R}"; }
+attack(){ echo -e "  ${BRED}[→]${R} $*"; }
+step()  { echo -e "  ${BBLU}[*]${R} $*"; }
+
+# ═══════════════════════════════════════════════════════════════════
+#  SPINNER
+# ═══════════════════════════════════════════════════════════════════
+SPINNER_PID=""
+_spin_start() {
+  local msg="${1:-Processing...}"
+  local frames=('⣾' '⣽' '⣻' '⢿' '⡿' '⣟' '⣯' '⣷')
+  (
+    local i=0
+    while true; do
+      printf "\r  ${BRED}%s${R} ${BOLD}%s${R}   " "${frames[$((i % 8))]}" "$msg"
+      sleep 0.07
+      ((i++))
+    done
+  ) &
+  SPINNER_PID=$!
+  disown "$SPINNER_PID"
+}
+
+_spin_stop() {
+  [[ -n "${SPINNER_PID}" ]] && {
+    kill "$SPINNER_PID" 2>/dev/null || true
+    wait "$SPINNER_PID" 2>/dev/null || true
+    SPINNER_PID=""
+    printf "\r%-80s\r" " "
+  }
+}
+
+# ═══════════════════════════════════════════════════════════════════
+#  DEPENDENCY CHECKER
+# ═══════════════════════════════════════════════════════════════════
+_check_cmd() {
+  command -v "$1" &>/dev/null
+}
+
+_require() {
+  local missing=()
+  for dep in "$@"; do
+    _check_cmd "$dep" || missing+=("$dep")
+  done
+  if [[ ${#missing[@]} -gt 0 ]]; then
+    err "Missing tools: ${missing[*]}"
+    info "Install with: sudo apt install ${missing[*]}  (or brew install on macOS)"
+    return 1
+  fi
+  return 0
+}
+
+# ═══════════════════════════════════════════════════════════════════
+#  BANNER
+# ═══════════════════════════════════════════════════════════════════
+_banner() {
+  clear
+  echo -e "${BRED}"
+  cat <<'BANNER'
+  ██████╗██╗   ██╗██████╗ ███████╗██████╗ ███████╗ ██████╗ ██████╗  ██████╗ ███████╗
+ ██╔════╝╚██╗ ██╔╝██╔══██╗██╔════╝██╔══██╗██╔════╝██╔═══██╗██╔══██╗██╔════╝ ██╔════╝
+ ██║      ╚████╔╝ ██████╔╝█████╗  ██████╔╝█████╗  ██║   ██║██████╔╝██║  ███╗█████╗
+ ██║       ╚██╔╝  ██╔══██╗██╔══╝  ██╔══██╗██╔══╝  ██║   ██║██╔══██╗██║   ██║██╔══╝
+ ╚██████╗   ██║   ██████╔╝███████╗██║  ██║██║     ╚██████╔╝██║  ██║╚██████╔╝███████╗
+  ╚═════╝   ╚═╝   ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝      ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝
+BANNER
+  echo -e "${R}"
+  echo -e "${DIM}  ┌─────────────────────────────────────────────────────────────────────────┐${R}"
+  printf  "  ${DIM}│${R}  ${BOLD}%-20s${R} ${BRED}Advanced SE & Cyber Security Toolkit%-15s${DIM}│${R}\n" "CyberForge v${TOOL_VERSION}" ""
+  printf  "  ${DIM}│${R}  ${BOLD}%-20s${R} ${BCYN}%-50s${DIM}│${R}\n" "Developer" "Demiyan Dissanayake"
+  printf  "  ${DIM}│${R}  ${BOLD}%-20s${R} ${DIM}%-50s${DIM}│${R}\n" "GitHub" "${TOOL_GITHUB}"
+  printf  "  ${DIM}│${R}  ${BOLD}%-20s${R} ${BYLW}FOR AUTHORIZED TESTING & EDUCATION ONLY%-11s${DIM}│${R}\n" "⚠  DISCLAIMER" ""
+  echo -e "${DIM}  └─────────────────────────────────────────────────────────────────────────┘${R}"
+  echo
+}
+
+# ═══════════════════════════════════════════════════════════════════
+#  HELP
+# ═══════════════════════════════════════════════════════════════════
+_help() {
+  _banner
+  echo -e "${BWHT}USAGE:${R}"
+  echo -e "  ${CYN}./cyberforge.sh${R} ${BYLW}<module>${R} ${DIM}[options]${R}"
+  echo
+
+  echo -e "${BWHT}══ 🔐 CYBER SECURITY MODULES ══════════════════════════════════════${R}"
+  local sec_cmds=(
+    "recon       ${DIM}│${R} ${GRN}Passive & active reconnaissance on a target host/domain"
+    "portscan    ${DIM}│${R} ${GRN}TCP/UDP port scanner with service fingerprinting"
+    "vulnscan    ${DIM}│${R} ${GRN}Common vulnerability checks (CVE, misconfigs, headers)"
+    "sslenum     ${DIM}│${R} ${GRN}SSL/TLS analysis — ciphers, cert chain, expiry"
+    "dnsrecon    ${DIM}│${R} ${GRN}DNS record enumeration + zone transfer attempt"
+    "webaudit    ${DIM}│${R} ${GRN}Web application security audit (headers, dirs, tech)"
+    "hashcrack   ${DIM}│${R} ${GRN}Hash identifier + dictionary crack (MD5/SHA/bcrypt)"
+    "passgen     ${DIM}│${R} ${GRN}Cryptographically secure password generator"
+    "encodedec   ${DIM}│${R} ${GRN}Encode/decode (base64, hex, URL, ROT13, XOR)"
+    "netmon      ${DIM}│${R} ${GRN}Real-time network monitor (connections, traffic)"
+    "logaudit    ${DIM}│${R} ${GRN}System log forensics & anomaly detection"
+    "firewall    ${DIM}│${R} ${GRN}Firewall rule inspector & hardening advisor"
+  )
+  for c in "${sec_cmds[@]}"; do
+    echo -e "  ${BYLW}${c}${R}"
+  done
+
+  echo
+  echo -e "${BWHT}══ 🛠  SOFTWARE ENGINEERING MODULES ═══════════════════════════════${R}"
+  local se_cmds=(
+    "sysinfo     ${DIM}│${R} ${GRN}Full system + hardware + OS fingerprint"
+    "procmon     ${DIM}│${R} ${GRN}Process monitor — CPU/MEM top consumers"
+    "diskaudit   ${DIM}│${R} ${GRN}Disk usage analysis + large file finder"
+    "sshaudit    ${DIM}│${R} ${GRN}SSH config audit & hardening"
+    "codeaudit   ${DIM}│${R} ${GRN}Source code static analysis (secrets, TODOs, complexity)"
+    "depcheck    ${DIM}│${R} ${GRN}Dependency & outdated package checker"
+    "apidebug    ${DIM}│${R} ${GRN}REST API tester + response analyzer"
+    "envcheck    ${DIM}│${R} ${GRN}Development environment health checker"
+    "dockeraudit ${DIM}│${R} ${GRN}Docker security & config audit"
+    "gitcheck    ${DIM}│${R} ${GRN}Git repository secrets & hygiene scanner"
+    "report      ${DIM}│${R} ${GRN}Generate full security report (saved to disk)"
+    "update      ${DIM}│${R} ${GRN}Check for CyberForge updates"
+  )
+  for c in "${se_cmds[@]}"; do
+    echo -e "  ${BYLW}${c}${R}"
+  done
+
+  echo
+  echo -e "${BWHT}EXAMPLES:${R}"
+  echo -e "  ${DIM}./cyberforge.sh recon example.com${R}"
+  echo -e "  ${DIM}./cyberforge.sh portscan 192.168.1.1 1-1024${R}"
+  echo -e "  ${DIM}./cyberforge.sh webaudit https://example.com${R}"
+  echo -e "  ${DIM}./cyberforge.sh hashcrack md5 5f4dcc3b5aa765d61d8327deb882cf99${R}"
+  echo -e "  ${DIM}./cyberforge.sh passgen 32 special${R}"
+  echo -e "  ${DIM}./cyberforge.sh codeaudit /path/to/project${R}"
+  echo
+}
+
+# ═══════════════════════════════════════════════════════════════════
+#  MODULE: RECON
+# ═══════════════════════════════════════════════════════════════════
+mod_recon() {
+  local target="${1:-}"
+  [[ -z "$target" ]] && { err "Usage: cyberforge.sh recon <host|domain|ip>"; return 1; }
+
+  _hdr "  🔍  RECONNAISSANCE: ${target}"
+  log_audit "recon started on $target"
+
+  # ── WHOIS ──
+  _sec "WHOIS Lookup"
+  if _check_cmd whois; then
+    whois "$target" 2>/dev/null | grep -Ei \
+      'registrar|created|expir|name server|org|country|admin|tech' \
+      | head -20 | while IFS= read -r line; do
+        echo -e "  ${DIM}║${R}  ${CYN}${line}${R}"
+      done
+  else
+    warn "whois not installed. Install: sudo apt install whois"
+  fi
+  _sec_end
+
+  # ── IP Resolution ──
+  _sec "IP Resolution"
+  local ips
+  ips="$(host "$target" 2>/dev/null | grep 'has address' | awk '{print $NF}' || true)"
+  if [[ -n "$ips" ]]; then
+    while IFS= read -r ip; do
+      found "IP Address: $ip"
+      # Geo info via ipinfo.io (no key needed for basic)
+      if _check_cmd curl; then
+        local geo
+        geo="$(curl -s --max-time 5 "https://ipinfo.io/${ip}/json" 2>/dev/null || echo '{}')"
+        local city country org
+        city="$(echo "$geo" | grep '"city"' | cut -d'"' -f4 || echo 'N/A')"
+        country="$(echo "$geo" | grep '"country"' | cut -d'"' -f4 || echo 'N/A')"
+        org="$(echo "$geo" | grep '"org"' | cut -d'"' -f4 || echo 'N/A')"
+        info "  Location : ${city}, ${country}"
+        info "  ISP/Org  : ${org}"
+      fi
+    done <<< "$ips"
+  else
+    warn "Could not resolve $target"
+  fi
+  _sec_end
+
+  # ── HTTP Headers (basic fingerprint) ──
+  _sec "HTTP Fingerprint"
+  if _check_cmd curl; then
+    local hdrs
+    hdrs="$(curl -sI --max-time 8 "http://${target}" 2>/dev/null || true)"
+    if [[ -n "$hdrs" ]]; then
+      local server x_powered tech
+      server="$(echo "$hdrs" | grep -i '^server:' | cut -d' ' -f2- | tr -d '\r')"
+      x_powered="$(echo "$hdrs" | grep -i 'x-powered-by:' | cut -d' ' -f2- | tr -d '\r')"
+      tech="${server:-Unknown}${x_powered:+ / $x_powered}"
+      found "Server Technology : ${tech}"
+      echo "$hdrs" | grep -Ei '^(x-|strict|content-sec|access-control)' | head -8 | \
+        while IFS= read -r h; do
+          echo -e "  ${DIM}║${R}  ${DIM}$(echo "$h" | tr -d '\r')${R}"
+        done
+    else
+      warn "No HTTP response from $target"
+    fi
+  fi
+  _sec_end
+
+  # ── Robots & Sitemap ──
+  _sec "Crawlable Endpoints"
+  if _check_cmd curl; then
+    for path in robots.txt sitemap.xml security.txt .well-known/security.txt; do
+      local code
+      code="$(curl -so /dev/null -w "%{http_code}" --max-time 5 \
+        "http://${target}/${path}" 2>/dev/null || echo 000)"
+      if [[ "$code" == "200" ]]; then
+        found "Found: http://${target}/${path}  [${code}]"
+      else
+        echo -e "  ${DIM}║${R}  ${DIM}/${path} → ${code}${R}"
+      fi
+    done
+  fi
+  _sec_end
+
+  log_audit "recon completed on $target"
+}
+
+# ═══════════════════════════════════════════════════════════════════
+#  MODULE: PORT SCANNER
+# ═══════════════════════════════════════════════════════════════════
+mod_portscan() {
+  local target="${1:-}"
+  local range="${2:-1-1024}"
+  [[ -z "$target" ]] && { err "Usage: cyberforge.sh portscan <host> [port-range]"; return 1; }
+
+  _hdr "  🔭  PORT SCANNER: ${target}  [${range}]"
+  log_audit "portscan $target $range"
+
+  # Parse range
+  local start_port end_port
+  start_port="$(echo "$range" | cut -d'-' -f1)"
+  end_port="$(echo "$range" | cut -d'-' -f2)"
+
+  # Prefer nmap if available
+  if _check_cmd nmap; then
+    _sec "Nmap Scan (SYN + Service Detection)"
+    info "Running: nmap -sV -sC -p${range} ${target}"
+    echo
+    nmap -sV -sC -p"${range}" --open -T4 "$target" 2>/dev/null | \
+      grep -E 'PORT|open|filtered|closed|Service|OS' | \
+      while IFS= read -r line; do
+        if echo "$line" | grep -q 'open'; then
+          echo -e "  ${BGRN}${line}${R}"
+        elif echo "$line" | grep -q 'filtered'; then
+          echo -e "  ${BYLW}${line}${R}"
+        else
+          echo -e "  ${DIM}${line}${R}"
+        fi
+      done
+    _sec_end
+  else
+    # Pure bash TCP scanner fallback
+    _sec "Bash TCP Port Scanner (no nmap)"
+    warn "nmap not found — using bash /dev/tcp scanner (slower)"
+    echo
+
+    local open_ports=()
+    local total=$((end_port - start_port + 1))
+    local scanned=0
+
+    # Known service names
+    declare -A SERVICES
+    SERVICES=( [21]="FTP" [22]="SSH" [23]="Telnet" [25]="SMTP" [53]="DNS"
+      [80]="HTTP" [110]="POP3" [143]="IMAP" [443]="HTTPS" [445]="SMB"
+      [3306]="MySQL" [3389]="RDP" [5432]="PostgreSQL" [6379]="Redis"
+      [8080]="HTTP-Alt" [8443]="HTTPS-Alt" [27017]="MongoDB" [5900]="VNC"
+      [11211]="Memcached" [9200]="Elasticsearch" )
+
+    printf "  Scanning %d ports on %s...\n" "$total" "$target"
+    echo
+
+    for ((port=start_port; port<=end_port; port++)); do
+      ((scanned++))
+      if (echo >/dev/tcp/"$target"/"$port") 2>/dev/null; then
+        local svc="${SERVICES[$port]:-unknown}"
+        found "Port ${port}/tcp  OPEN  [${svc}]"
+        open_ports+=("$port")
+      fi
+
+      # Progress bar every 50 ports
+      if (( scanned % 50 == 0 )); then
+        local pct=$((scanned * 100 / total))
+        local bar_w=$((pct * 40 / 100))
+        local bar; bar="$(printf '%0.s█' $(seq 1 $bar_w 2>/dev/null) || echo '')"
+        printf "\r  ${BCYN}[%-40s]${R} ${DIM}%d%%${R}" "$bar" "$pct"
+      fi
+    done
+    printf "\r%-80s\r" " "
+
+    echo
+    if [[ ${#open_ports[@]} -gt 0 ]]; then
+      found "Open ports: ${open_ports[*]}"
+    else
+      info "No open ports found in range ${range}"
+    fi
+    _sec_end
+  fi
+
+  log_audit "portscan done on $target"
+}
+
+# ═══════════════════════════════════════════════════════════════════
+#  MODULE: SSL/TLS ENUMERATION
+# ═══════════════════════════════════════════════════════════════════
+mod_sslenum() {
+  local target="${1:-}"
+  local port="${2:-443}"
+  [[ -z "$target" ]] && { err "Usage: cyberforge.sh sslenum <host> [port]"; return 1; }
+
+  _hdr "  🔒  SSL/TLS ANALYSIS: ${target}:${port}"
+  log_audit "sslenum $target $port"
+
+  if ! _require openssl; then return 1; fi
+
+  # ── Cert Info ──
+  _sec "Certificate Information"
+  local cert_out
+  cert_out="$(echo | openssl s_client -connect "${target}:${port}" \
+    -servername "$target" 2>/dev/null | openssl x509 -noout \
+    -subject -issuer -dates -fingerprint -serial 2>/dev/null || true)"
+
+  if [[ -n "$cert_out" ]]; then
+    while IFS= read -r line; do
+      local key val
+      key="$(echo "$line" | cut -d'=' -f1 | tr -d ' ')"
+      val="$(echo "$line" | cut -d'=' -f2-)"
+      case "$key" in
+        *subject*|*Subject*) found "Subject   : $val" ;;
+        *issuer*|*Issuer*)   info  "Issuer    : $val" ;;
+        *notBefore*)         info  "Valid From: $val" ;;
+        *notAfter*)
+          # Check expiry
+          local exp_ts
+          exp_ts="$(date -d "$val" +%s 2>/dev/null || date -j -f "%b %d %T %Y %Z" "$val" +%s 2>/dev/null || echo 0)"
+          local now_ts; now_ts="$(date +%s)"
+          local days_left=$(( (exp_ts - now_ts) / 86400 ))
+          if [[ $days_left -lt 30 ]]; then
+            warn "Expires  : $val  ⚠ EXPIRES IN ${days_left} DAYS!"
+          else
+            ok "Expires  : $val  (${days_left} days)"
+          fi
+          ;;
+        *Fingerprint*) info "Fingerprint: $val" ;;
+      esac
+    done <<< "$cert_out"
+  fi
+  _sec_end
+
+  # ── Protocol Support ──
+  _sec "Protocol Support"
+  for proto in ssl2 ssl3 tls1 tls1_1 tls1_2 tls1_3; do
+    local label="$proto"
+    local result
+    result="$(echo | timeout 4 openssl s_client \
+      -"$proto" -connect "${target}:${port}" \
+      -servername "$target" 2>&1 | head -3 || true)"
+    if echo "$result" | grep -q "CONNECTED"; then
+      if [[ "$proto" == "ssl2" ]] || [[ "$proto" == "ssl3" ]] || [[ "$proto" == "tls1" ]] || [[ "$proto" == "tls1_1" ]]; then
+        warn "${label^^}: ENABLED  ← INSECURE / DEPRECATED"
+      else
+        ok "${label^^}: ENABLED"
+      fi
+    else
+      echo -e "  ${DIM}║${R}  ${DIM}${label^^}: Disabled or not supported${R}"
+    fi
+  done
+  _sec_end
+
+  # ── Cipher Check ──
+  _sec "Weak Cipher Detection"
+  local weak_ciphers=("RC4" "DES" "3DES" "NULL" "EXPORT" "anon" "MD5")
+  for cipher in "${weak_ciphers[@]}"; do
+    local result
+    result="$(echo | timeout 4 openssl s_client \
+      -cipher "$cipher" -connect "${target}:${port}" \
+      -servername "$target" 2>&1 | head -3 || true)"
+    if echo "$result" | grep -q "CONNECTED"; then
+      warn "Weak cipher supported: ${cipher}  ← VULNERABILITY"
+    else
+      ok "Cipher ${cipher}: Not accepted"
+    fi
+  done
+  _sec_end
+
+  log_audit "sslenum done $target:$port"
+}
+
+# ═══════════════════════════════════════════════════════════════════
+#  MODULE: DNS RECONNAISSANCE
+# ═══════════════════════════════════════════════════════════════════
+mod_dnsrecon() {
+  local target="${1:-}"
+  [[ -z "$target" ]] && { err "Usage: cyberforge.sh dnsrecon <domain>"; return 1; }
+
+  _hdr "  🌐  DNS RECONNAISSANCE: ${target}"
+  log_audit "dnsrecon $target"
+
+  if ! _require dig host; then return 1; fi
+
+  # ── All Record Types ──
+  _sec "DNS Records"
+  local record_types=("A" "AAAA" "MX" "NS" "TXT" "CNAME" "SOA" "PTR" "SRV")
+  for rtype in "${record_types[@]}"; do
+    local result
+    result="$(dig +short "$rtype" "$target" 2>/dev/null || true)"
+    if [[ -n "$result" ]]; then
+      found "[${rtype}]"
+      while IFS= read -r line; do
+        echo -e "  ${DIM}║${R}    ${CYN}$line${R}"
+      done <<< "$result"
+    else
+      echo -e "  ${DIM}║${R}  ${DIM}[${rtype}] No records${R}"
+    fi
+  done
+  _sec_end
+
+  # ── Zone Transfer Attempt ──
+  _sec "Zone Transfer Attempt (AXFR)"
+  local ns_list
+  ns_list="$(dig +short NS "$target" 2>/dev/null || true)"
+  if [[ -n "$ns_list" ]]; then
+    while IFS= read -r ns; do
+      step "Trying AXFR from: $ns"
+      local axfr
+      axfr="$(dig AXFR "$target" @"$ns" 2>/dev/null | grep -v ';' | head -20 || true)"
+      if [[ -n "$axfr" ]]; then
+        warn "ZONE TRANSFER SUCCESSFUL from ${ns} — MISCONFIGURATION!"
+        while IFS= read -r line; do
+          attack "$line"
+        done <<< "$axfr"
+      else
+        ok "AXFR refused from ${ns} (expected)"
+      fi
+    done <<< "$ns_list"
+  else
+    warn "No nameservers found for $target"
+  fi
+  _sec_end
+
+  # ── Subdomain Brute Force (small wordlist) ──
+  _sec "Common Subdomain Check"
+  local common_subs=("www" "mail" "ftp" "dev" "api" "admin" "portal" "vpn"
+    "remote" "webmail" "smtp" "pop" "imap" "ns1" "ns2" "cdn"
+    "static" "media" "blog" "shop" "test" "staging" "beta"
+    "auth" "sso" "app" "dashboard" "docs" "wiki")
+
+  local found_subs=0
+  for sub in "${common_subs[@]}"; do
+    local full="${sub}.${target}"
+    local ip
+    ip="$(dig +short A "$full" 2>/dev/null | head -1 || true)"
+    if [[ -n "$ip" ]]; then
+      found "FOUND: ${full}  →  ${ip}"
+      ((found_subs++))
+    fi
+  done
+  [[ $found_subs -eq 0 ]] && info "No common subdomains found"
+  _sec_end
+
+  log_audit "dnsrecon done $target"
+}
+
+# ═══════════════════════════════════════════════════════════════════
+#  MODULE: WEB APPLICATION AUDIT
+# ═══════════════════════════════════════════════════════════════════
+mod_webaudit() {
+  local url="${1:-}"
+  [[ -z "$url" ]] && { err "Usage: cyberforge.sh webaudit <https://target.com>"; return 1; }
+
+  # Normalize URL
+  [[ "$url" != http* ]] && url="http://${url}"
+  local host; host="$(echo "$url" | sed 's|https\?://||' | cut -d'/' -f1)"
+
+  _hdr "  🕸️   WEB APPLICATION AUDIT: ${url}"
+  log_audit "webaudit $url"
+
+  if ! _require curl; then return 1; fi
+
+  # ── Security Headers ──
+  _sec "Security Headers"
+  local hdrs
+  hdrs="$(curl -sI --max-time 10 "$url" 2>/dev/null || true)"
+
+  declare -A SEC_HDRS
+  SEC_HDRS=(
+    ["Strict-Transport-Security"]="HSTS"
+    ["Content-Security-Policy"]="CSP"
+    ["X-Frame-Options"]="Clickjacking Protection"
+    ["X-Content-Type-Options"]="MIME Sniffing Protection"
+    ["X-XSS-Protection"]="XSS Filter"
+    ["Referrer-Policy"]="Referrer Policy"
+    ["Permissions-Policy"]="Permissions Policy"
+    ["Access-Control-Allow-Origin"]="CORS Policy"
+  )
+
+  local missing_hdrs=0
+  for hdr in "${!SEC_HDRS[@]}"; do
+    local desc="${SEC_HDRS[$hdr]}"
+    if echo "$hdrs" | grep -qi "^${hdr}:"; then
+      local val; val="$(echo "$hdrs" | grep -i "^${hdr}:" | cut -d' ' -f2- | tr -d '\r')"
+      ok "${desc} (${hdr}): ${val:0:60}"
+    else
+      warn "MISSING: ${hdr}  [${desc}]"
+      ((missing_hdrs++))
+    fi
+  done
+  [[ $missing_hdrs -gt 0 ]] && echo -e "\n  ${BRED}[!]${R} ${missing_hdrs} security headers missing!"
+  _sec_end
+
+  # ── Information Disclosure ──
+  _sec "Information Disclosure"
+  local server x_powered via
+  server="$(echo "$hdrs" | grep -i '^Server:' | cut -d' ' -f2- | tr -d '\r' || true)"
+  x_powered="$(echo "$hdrs" | grep -i 'X-Powered-By:' | cut -d' ' -f2- | tr -d '\r' || true)"
+  via="$(echo "$hdrs" | grep -i '^Via:' | cut -d' ' -f2- | tr -d '\r' || true)"
+
+  [[ -n "$server"    ]] && warn "Server version disclosed: $server"    || ok "Server header hidden"
+  [[ -n "$x_powered" ]] && warn "Backend disclosed: $x_powered"       || ok "X-Powered-By hidden"
+  [[ -n "$via"       ]] && info "Via header: $via"
+  _sec_end
+
+  # ── Sensitive Path Discovery ──
+  _sec "Sensitive Path Discovery"
+  local sens_paths=(
+    ".git/HEAD" ".env" ".htaccess" ".htpasswd"
+    "wp-login.php" "wp-admin/" "admin/" "administrator/"
+    "phpmyadmin/" "phpinfo.php" "info.php" "test.php"
+    "config.php" "backup.sql" "dump.sql" "robots.txt"
+    ".DS_Store" "web.config" "crossdomain.xml"
+    "server-status" "server-info" "elmah.axd"
+    "api/v1/users" "api/swagger" "swagger.json"
+    ".well-known/security.txt" "security.txt"
+  )
+
+  for path in "${sens_paths[@]}"; do
+    local code
+    code="$(curl -so /dev/null -w "%{http_code}" \
+      --max-time 5 "${url}/${path}" 2>/dev/null || echo 000)"
+    case "$code" in
+      200) found "[${code}] FOUND: /${path}  ← CHECK THIS!" ;;
+      301|302) info "[${code}] REDIRECT: /${path}" ;;
+      403) echo -e "  ${DIM}║${R}  ${BYLW}[${code}] Forbidden: /${path}${R}" ;;
+      *)   echo -e "  ${DIM}║${R}  ${DIM}[${code}] /${path}${R}" ;;
+    esac
+  done
+  _sec_end
+
+  # ── Cookie Analysis ──
+  _sec "Cookie Security Analysis"
+  local cookies
+  cookies="$(curl -sI --max-time 8 "$url" 2>/dev/null | grep -i 'set-cookie' || true)"
+  if [[ -n "$cookies" ]]; then
+    while IFS= read -r cookie; do
+      local name; name="$(echo "$cookie" | cut -d'=' -f1 | awk '{print $2}')"
+      echo -e "  ${DIM}║${R}  Cookie: ${BOLD}${name}${R}"
+      echo "$cookie" | grep -qi 'httponly' && ok "  HttpOnly: Yes"  || warn "  HttpOnly: MISSING"
+      echo "$cookie" | grep -qi 'secure'   && ok "  Secure: Yes"    || warn "  Secure: MISSING"
+      echo "$cookie" | grep -qi 'samesite' && ok "  SameSite: Set"  || warn "  SameSite: MISSING"
+    done <<< "$cookies"
+  else
+    info "No cookies returned from initial request"
+  fi
+  _sec_end
+
+  log_audit "webaudit done $url"
+}
+
+# ═══════════════════════════════════════════════════════════════════
+#  MODULE: VULNERABILITY SCAN
+# ═══════════════════════════════════════════════════════════════════
+mod_vulnscan() {
+  local target="${1:-}"
+  [[ -z "$target" ]] && { err "Usage: cyberforge.sh vulnscan <host>"; return 1; }
+
+  _hdr "  🚨  VULNERABILITY SCAN: ${target}"
+  log_audit "vulnscan $target"
+
+  # ── Default Credentials Check ──
+  _sec "Default Service Credentials (Safe Check)"
+  local services_ports=("21:FTP" "22:SSH" "23:Telnet" "3306:MySQL"
+    "5432:PostgreSQL" "6379:Redis" "27017:MongoDB" "9200:Elasticsearch")
+  for sp in "${services_ports[@]}"; do
+    local port svc; port="${sp%%:*}"; svc="${sp##*:}"
+    if (echo >/dev/tcp/"$target"/"$port") 2>/dev/null; then
+      warn "Port ${port} (${svc}) is OPEN — check for default credentials!"
+      case "$svc" in
+        Redis)         attack "redis-cli -h ${target} ping (no-auth Redis?)" ;;
+        Elasticsearch) attack "curl http://${target}:9200/ (open ES?)" ;;
+        MongoDB)       attack "mongo ${target}:27017 (no-auth Mongo?)" ;;
+      esac
+    fi
+  done
+  _sec_end
+
+  # ── Common CVE Pattern Checks ──
+  _sec "Common Misconfiguration Checks"
+  if _check_cmd curl; then
+    # Shellshock
+    local res
+    res="$(curl -sI --max-time 5 -H "User-Agent: () { :;}; echo Content-Type: text/plain; echo; echo Shellshock" \
+      "http://${target}/cgi-bin/test" 2>/dev/null || true)"
+    if echo "$res" | grep -q "Shellshock"; then
+      warn "SHELLSHOCK potentially vulnerable!"
+    fi
+
+    # Exposed .git
+    local code
+    code="$(curl -so /dev/null -w "%{http_code}" --max-time 5 \
+      "http://${target}/.git/HEAD" 2>/dev/null || echo 000)"
+    [[ "$code" == "200" ]] && \
+      warn ".git/HEAD exposed — source code leakage risk!" || \
+      ok ".git not exposed"
+
+    # Directory listing
+    code="$(curl -so /tmp/cf_dir.txt -w "%{http_code}" --max-time 5 \
+      "http://${target}/" 2>/dev/null || echo 000)"
+    if grep -qi "Index of" /tmp/cf_dir.txt 2>/dev/null; then
+      warn "Directory listing ENABLED — information disclosure!"
+    else
+      ok "Directory listing appears disabled"
+    fi
+
+    # X-Powered-By version
+    local xpb
+    xpb="$(curl -sI --max-time 5 "http://${target}" 2>/dev/null | \
+      grep -i 'X-Powered-By:' | cut -d' ' -f2- | tr -d '\r' || true)"
+    [[ -n "$xpb" ]] && warn "Version fingerprint in X-Powered-By: $xpb"
+  fi
+  _sec_end
+
+  # ── Open Redirect Probe ──
+  _sec "Open Redirect Probe"
+  if _check_cmd curl; then
+    local redirect_payloads=("//evil.com" "http://evil.com" "/\\/evil.com")
+    for pl in "${redirect_payloads[@]}"; do
+      local redir
+      redir="$(curl -sI --max-time 5 \
+        "http://${target}/?url=${pl}&redirect=${pl}&next=${pl}" 2>/dev/null | \
+        grep -i 'location:' | tr -d '\r' || true)"
+      if echo "$redir" | grep -qi "evil.com"; then
+        warn "OPEN REDIRECT POSSIBLE: $redir"
+      fi
+    done
+    ok "Open redirect probes complete"
+  fi
+  _sec_end
+
+  log_audit "vulnscan done $target"
+}
+
+# ═══════════════════════════════════════════════════════════════════
+#  MODULE: HASH IDENTIFIER & CRACKER
+# ═══════════════════════════════════════════════════════════════════
+mod_hashcrack() {
+  local hash_type="${1:-}"
+  local hash_value="${2:-}"
+  [[ -z "$hash_value" ]] && { err "Usage: cyberforge.sh hashcrack <type|auto> <hash>"; return 1; }
+
+  _hdr "  #  HASH CRACKER"
+  log_audit "hashcrack $hash_type"
+
+  # ── Auto Identify ──
+  _sec "Hash Identification"
+  local len="${#hash_value}"
+  local detected_type="Unknown"
+
+  if [[ "$hash_type" == "auto" ]] || [[ -z "$hash_type" ]]; then
+    case "$len" in
+      32)  detected_type="MD5 or NTLM" ;;
+      40)  detected_type="SHA-1" ;;
+      56)  detected_type="SHA-224" ;;
+      64)  detected_type="SHA-256 or Keccak-256" ;;
+      96)  detected_type="SHA-384" ;;
+      128) detected_type="SHA-512" ;;
+      *)
+        if echo "$hash_value" | grep -qP '^\$2[aby]\$'; then
+          detected_type="bcrypt"
+        elif echo "$hash_value" | grep -qP '^\$6\$'; then
+          detected_type="SHA-512-crypt"
+        elif echo "$hash_value" | grep -qP '^\$5\$'; then
+          detected_type="SHA-256-crypt"
+        elif echo "$hash_value" | grep -qP '^\$1\$'; then
+          detected_type="MD5-crypt"
+        fi
+        ;;
+    esac
+    hash_type="$detected_type"
+  fi
+
+  found "Hash      : ${hash_value:0:40}..."
+  found "Detected  : ${hash_type}  (length: ${len})"
+  _sec_end
+
+  # ── Dictionary Attack ──
+  _sec "Dictionary Attack"
+
+  # Built-in mini wordlist (common passwords)
+  local wordlist=("password" "123456" "password123" "admin" "letmein"
+    "qwerty" "monkey" "dragon" "master" "111111"
+    "abc123" "iloveyou" "sunshine" "princess" "welcome"
+    "shadow" "login" "pass" "test" "root" "toor"
+    "admin123" "changeme" "12345678" "password1" "secret"
+    "P@ssw0rd" "Password1" "Pass@123" "Admin@123" "Summer2024"
+    "Winter2024" "Spring2024" "Autumn2024" "Company2024" "Hello@123")
+
+  # Use external wordlist if available
+  local wl_file="${CF_WORDLISTS}/rockyou_mini.txt"
+  if [[ -f "$wl_file" ]]; then
+    info "Using wordlist: $wl_file"
+    mapfile -t wordlist < "$wl_file"
+  else
+    info "Using built-in wordlist (${#wordlist[@]} passwords)"
+    info "Tip: Place rockyou.txt at ${wl_file} for better coverage"
+  fi
+
+  local cracked=false
+  local tested=0
+
+  for word in "${wordlist[@]}"; do
+    ((tested++))
+    local computed=""
+    case "${hash_type,,}" in
+      *md5*)    computed="$(echo -n "$word" | md5sum | cut -d' ' -f1 2>/dev/null || true)" ;;
+      *sha1*|*sha-1*)   computed="$(echo -n "$word" | sha1sum | cut -d' ' -f1 2>/dev/null || true)" ;;
+      *sha256*|*sha-256*) computed="$(echo -n "$word" | sha256sum | cut -d' ' -f1 2>/dev/null || true)" ;;
+      *sha512*|*sha-512*) computed="$(echo -n "$word" | sha512sum | cut -d' ' -f1 2>/dev/null || true)" ;;
+    esac
+
+    if [[ "${computed,,}" == "${hash_value,,}" ]]; then
+      echo
+      found "CRACKED! Password: ${BOLD}${word}${R}"
+      cracked=true
+      break
+    fi
+  done
+
+  if ! $cracked; then
+    warn "Hash not cracked with built-in wordlist (tested ${tested} passwords)"
+    info "Try: hashcat -m 0 '${hash_value}' /path/to/rockyou.txt"
+    info "Try: john --wordlist=/path/to/rockyou.txt --format=raw-md5 hash.txt"
+  fi
+  _sec_end
+
+  log_audit "hashcrack done type=$hash_type cracked=$cracked"
+}
+
+# ═══════════════════════════════════════════════════════════════════
+#  MODULE: SECURE PASSWORD GENERATOR
+# ═══════════════════════════════════════════════════════════════════
+mod_passgen() {
+  local length="${1:-24}"
+  local mode="${2:-special}"  # alpha | alnum | special | paranoid
+
+  _hdr "  🔑  SECURE PASSWORD GENERATOR"
+
+  local charset
+  case "$mode" in
+    alpha)   charset='A-Za-z' ;;
+    alnum)   charset='A-Za-z0-9' ;;
+    special) charset='A-Za-z0-9!@#$%^&*()_+-=[]{}|;:,.<>?' ;;
+    paranoid)charset='A-Za-z0-9!@#$%^&*()_+-=[]{}|;:,.<>?~`\\/' ;;
+    *)       charset='A-Za-z0-9!@#$%^&*()_+-=' ;;
+  esac
+
+  _sec "Generated Passwords  [length=${length}, mode=${mode}]"
+  echo
+
+  for i in {1..10}; do
+    local pass
+    pass="$(cat /dev/urandom 2>/dev/null | tr -dc "$charset" | head -c "$length" || \
+            LC_ALL=C tr -dc "$charset" < /dev/urandom | head -c "$length")"
+
+    # Strength score
+    local score=0
+    echo "$pass" | grep -q '[A-Z]' && ((score+=20))
+    echo "$pass" | grep -q '[a-z]' && ((score+=20))
+    echo "$pass" | grep -q '[0-9]' && ((score+=20))
+    echo "$pass" | grep -q '[^A-Za-z0-9]' && ((score+=20))
+    [[ ${#pass} -ge 16 ]] && ((score+=20))
+
+    local strength_label strength_color
+    if   [[ $score -ge 100 ]]; then strength_label="ULTRA-STRONG"; strength_color="$BGRN"
+    elif [[ $score -ge 80  ]]; then strength_label="STRONG";       strength_color="$GRN"
+    elif [[ $score -ge 60  ]]; then strength_label="MEDIUM";       strength_color="$BYLW"
+    else                            strength_label="WEAK";         strength_color="$BRED"
+    fi
+
+    printf "  ${DIM}║${R}  ${BOLD}%2d.${R} ${BCYN}%s${R}  ${strength_color}[%s]${R}\n" \
+      "$i" "$pass" "$strength_label"
+  done
+
+  echo
+  _sec_end
+
+  # ── Entropy Info ──
+  _sec "Entropy Information"
+  local charset_size=0
+  [[ "$charset" == *'A-Z'* ]] && ((charset_size+=26))
+  [[ "$charset" == *'a-z'* ]] && ((charset_size+=26))
+  [[ "$charset" == *'0-9'* ]] && ((charset_size+=10))
+  [[ "$mode" == "special" || "$mode" == "paranoid" ]] && ((charset_size+=30))
+  local entropy
+  entropy=$(awk "BEGIN{printf \"%.1f\", ${length} * 3.321928 * l(${charset_size}/10)}" 2>/dev/null || echo "N/A")
+  _row "Charset Size"   "${charset_size} characters"  "$CYN"
+  _row "Length"         "${length} characters"        "$CYN"
+  _row "Approx Entropy" "~${length}×log₂(${charset_size}) bits" "$BGRN"
+  _row "Mode"           "$mode" "$DIM"
+  _sec_end
+}
+
+# ═══════════════════════════════════════════════════════════════════
+#  MODULE: ENCODE / DECODE
+# ═══════════════════════════════════════════════════════════════════
+mod_encodedec() {
+  local action="${1:-}"   # encode|decode
+  local scheme="${2:-}"   # base64|hex|url|rot13|binary
+  local input="${3:-}"
+
+  [[ -z "$input" ]] && { err "Usage: cyberforge.sh encodedec <encode|decode> <scheme> <text>"; return 1; }
+
+  _hdr "  ⚙️   ENCODE / DECODE"
+
+  _sec "${action^^}: ${scheme^^}"
+  local result=""
+  case "${scheme,,}" in
+    base64)
+      if [[ "$action" == "encode" ]]; then
+        result="$(echo -n "$input" | base64)"
+      else
+        result="$(echo -n "$input" | base64 -d 2>/dev/null || echo '[invalid base64]')"
+      fi
+      ;;
+    hex)
+      if [[ "$action" == "encode" ]]; then
+        result="$(echo -n "$input" | xxd -p | tr -d '\n')"
+      else
+        result="$(echo -n "$input" | xxd -r -p 2>/dev/null || echo '[invalid hex]')"
+      fi
+      ;;
+    url)
+      if [[ "$action" == "encode" ]]; then
+        result="$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1]))" "$input" 2>/dev/null || \
+                  echo "$input" | sed 's/ /%20/g;s/!/%21/g;s/"/%22/g;s/#/%23/g')"
+      else
+        result="$(python3 -c "import urllib.parse,sys; print(urllib.parse.unquote(sys.argv[1]))" "$input" 2>/dev/null || \
+                  echo "$input" | sed 's/%20/ /g;s/%21/!/g')"
+      fi
+      ;;
+    rot13)
+      result="$(echo "$input" | tr 'A-Za-z' 'N-ZA-Mn-za-m')"
+      ;;
+    binary)
+      if [[ "$action" == "encode" ]]; then
+        result="$(echo -n "$input" | od -A n -t u1 | \
+          awk '{for(i=1;i<=NF;i++) printf "%08d ", strtonum($i)}' | \
+          sed 's/ $/\n/')"
+      else
+        result="[Binary decode: use python3 for binary-to-text]"
+      fi
+      ;;
+    md5)
+      result="$(echo -n "$input" | md5sum | cut -d' ' -f1)"
+      ;;
+    sha1)
+      result="$(echo -n "$input" | sha1sum | cut -d' ' -f1)"
+      ;;
+    sha256)
+      result="$(echo -n "$input" | sha256sum | cut -d' ' -f1)"
+      ;;
+    sha512)
+      result="$(echo -n "$input" | sha512sum | cut -d' ' -f1)"
+      ;;
+    *)
+      err "Unknown scheme: $scheme"
+      info "Supported: base64, hex, url, rot13, binary, md5, sha1, sha256, sha512"
+      return 1
+      ;;
+  esac
+
+  echo
+  found "Input   : $input"
+  found "Output  : ${BOLD}${result}${R}"
+  echo
+  _sec_end
+}
+
+# ═══════════════════════════════════════════════════════════════════
+#  MODULE: SYSTEM INFO
+# ═══════════════════════════════════════════════════════════════════
+mod_sysinfo() {
+  _hdr "  💻  SYSTEM FINGERPRINT"
+  log_info "sysinfo started"
+
+  # ── OS Info ──
+  _sec "Operating System"
+  local os kernel arch
+  os="$(uname -s 2>/dev/null)"
+  kernel="$(uname -r 2>/dev/null)"
+  arch="$(uname -m 2>/dev/null)"
+
+  _row "OS"           "$os" "$BCYN"
+  _row "Kernel"       "$kernel" "$CYN"
+  _row "Architecture" "$arch" "$CYN"
+
+  if [[ -f /etc/os-release ]]; then
+    local distro
+    distro="$(. /etc/os-release && echo "${PRETTY_NAME:-$NAME}")"
+    _row "Distribution" "$distro" "$BGRN"
+  elif [[ "$os" == "Darwin" ]]; then
+    local macos
+    macos="$(sw_vers -productVersion 2>/dev/null)"
+    _row "macOS Version" "$macos" "$BGRN"
+  fi
+
+  local hostname uptime_val
+  hostname="$(hostname 2>/dev/null)"
+  uptime_val="$(uptime -p 2>/dev/null || uptime 2>/dev/null | head -1 || echo 'N/A')"
+  _row "Hostname" "$hostname" "$BYLW"
+  _row "Uptime" "$uptime_val" "$DIM"
+  _sec_end
+
+  # ── CPU ──
+  _sec "CPU"
+  local cpu_model cpu_cores cpu_threads cpu_mhz
+  cpu_model="$(grep 'model name' /proc/cpuinfo 2>/dev/null | head -1 | cut -d':' -f2 | xargs || \
+               sysctl -n machdep.cpu.brand_string 2>/dev/null || echo 'N/A')"
+  cpu_cores="$(grep -c '^processor' /proc/cpuinfo 2>/dev/null || \
+               sysctl -n hw.physicalcpu 2>/dev/null || echo 'N/A')"
+  cpu_mhz="$(grep 'cpu MHz' /proc/cpuinfo 2>/dev/null | head -1 | awk '{print $4}' || echo 'N/A')"
+
+  _row "Model" "$cpu_model" "$BCYN"
+  _row "Cores" "$cpu_cores" "$CYN"
+  _row "Frequency" "${cpu_mhz} MHz" "$DIM"
+
+  # CPU load
+  local load; load="$(cat /proc/loadavg 2>/dev/null | awk '{print $1,$2,$3}' || echo 'N/A')"
+  _row "Load Avg (1/5/15m)" "$load" "$BYLW"
+  _sec_end
+
+  # ── Memory ──
+  _sec "Memory"
+  if [[ -f /proc/meminfo ]]; then
+    local mem_total mem_free mem_avail mem_used
+    mem_total="$(awk '/MemTotal/{print int($2/1024)"MB"}' /proc/meminfo)"
+    mem_free="$(awk '/MemFree/{print int($2/1024)"MB"}' /proc/meminfo)"
+    mem_avail="$(awk '/MemAvailable/{print int($2/1024)"MB"}' /proc/meminfo)"
+    local mem_num_total mem_num_avail
+    mem_num_total="$(awk '/MemTotal/{print $2}' /proc/meminfo)"
+    mem_num_avail="$(awk '/MemAvailable/{print $2}' /proc/meminfo)"
+    mem_used="$(( (mem_num_total - mem_num_avail) / 1024 ))MB"
+    local pct=$(( (mem_num_total - mem_num_avail) * 100 / mem_num_total ))
+    local bar_w=$((pct * 30 / 100))
+    local bar; bar="$(printf '%0.s█' $(seq 1 $bar_w 2>/dev/null) || echo '')"
+    local empty; empty="$(printf '%0.s░' $(seq 1 $((30-bar_w)) 2>/dev/null) || echo '')"
+
+    _row "Total"     "$mem_total" "$CYN"
+    _row "Used"      "$mem_used  [${pct}%]" "$BYLW"
+    _row "Available" "$mem_avail" "$BGRN"
+    printf "  ${DIM}║${R}  ${BOLD}%-30s${R} ${BCYN}%s${BRED}%s${R} ${DIM}%d%%${R}\n" \
+      "Usage Bar" "$bar" "$empty" "$pct"
+  fi
+  _sec_end
+
+  # ── Network Interfaces ──
+  _sec "Network Interfaces"
+  if _check_cmd ip; then
+    ip addr show 2>/dev/null | awk '/^[0-9]+:/{iface=$2} /inet /{print iface, $2}' | \
+      grep -v '^lo' | while read -r iface addr; do
+        _row "$iface" "$addr" "$BCYN"
+      done
+  elif _check_cmd ifconfig; then
+    ifconfig 2>/dev/null | awk '/^[a-z]/{iface=$1} /inet /{print iface, $2}' | \
+      grep -v 'lo\|127' | while read -r iface addr; do
+        _row "$iface" "$addr" "$BCYN"
+      done
+  fi
+  _sec_end
+
+  # ── Users ──
+  _sec "Logged-in Users"
+  who 2>/dev/null | while IFS= read -r line; do
+    echo -e "  ${DIM}║${R}  ${CYN}$line${R}"
+  done
+  _sec_end
+
+  log_info "sysinfo done"
+}
+
+# ═══════════════════════════════════════════════════════════════════
+#  MODULE: PROCESS MONITOR
+# ═══════════════════════════════════════════════════════════════════
+mod_procmon() {
+  _hdr "  ⚡  PROCESS MONITOR"
+
+  _sec "Top CPU Consumers"
+  printf "  ${DIM}║${R}  ${BOLD}%-8s %-25s %8s %8s %8s${R}\n" \
+    "PID" "Process" "CPU%" "MEM%" "STAT"
+  echo -e "  ${DIM}║${R}  $(_line '─' 64)"
+
+  ps aux --sort=-%cpu 2>/dev/null | awk 'NR>1 && NR<=16{
+    printf "  \033[2m║\033[0m  %-8s %-25s %8s %8s %8s\n", $2, $11, $3, $4, $8
+  }' | head -15
+  _sec_end
+
+  _sec "Top Memory Consumers"
+  printf "  ${DIM}║${R}  ${BOLD}%-8s %-25s %8s %8s${R}\n" \
+    "PID" "Process" "MEM%" "VSZ(KB)"
+  echo -e "  ${DIM}║${R}  $(_line '─' 55)"
+
+  ps aux --sort=-%mem 2>/dev/null | awk 'NR>1 && NR<=11{
+    printf "  \033[2m║\033[0m  %-8s %-25s %8s %8s\n", $2, $11, $4, $5
+  }' | head -10
+  _sec_end
+
+  _sec "Open Network Connections"
+  if _check_cmd ss; then
+    ss -tulnp 2>/dev/null | head -20 | while IFS= read -r line; do
+      echo -e "  ${DIM}║${R}  ${CYN}${line}${R}"
+    done
+  elif _check_cmd netstat; then
+    netstat -tulnp 2>/dev/null | head -20 | while IFS= read -r line; do
+      echo -e "  ${DIM}║${R}  ${CYN}${line}${R}"
+    done
+  fi
+  _sec_end
+}
+
+# ═══════════════════════════════════════════════════════════════════
+#  MODULE: CODE AUDIT
+# ═══════════════════════════════════════════════════════════════════
+mod_codeaudit() {
+  local path="${1:-$(pwd)}"
+  [[ ! -d "$path" ]] && { err "Directory not found: $path"; return 1; }
+
+  _hdr "  🔬  CODE AUDIT: ${path}"
+  log_audit "codeaudit $path"
+
+  # ── Secret Patterns ──
+  _sec "Secret / Credential Patterns"
+  local secret_patterns=(
+    'password\s*=\s*["\x27][^"\x27]{3,}'
+    'passwd\s*=\s*["\x27][^"\x27]{3,}'
+    'secret\s*=\s*["\x27][^"\x27]{3,}'
+    'api[_-]?key\s*=\s*["\x27][^"\x27]{3,}'
+    'access[_-]?token\s*=\s*["\x27][^"\x27]{3,}'
+    'private[_-]?key\s*=\s*["\x27][^"\x27]{3,}'
+    'BEGIN RSA PRIVATE KEY'
+    'BEGIN OPENSSH PRIVATE KEY'
+    'AKIA[0-9A-Z]{16}'
+    'ghp_[a-zA-Z0-9]{36}'
+    'glpat-[a-zA-Z0-9_-]{20}'
+    'Authorization:\s*Bearer'
+    'mysql://.*:.*@'
+    'postgresql://.*:.*@'
+    'mongodb://.*:.*@'
+  )
+
+  local secret_hits=0
+  for pat in "${secret_patterns[@]}"; do
+    local matches
+    matches="$(grep -rEi --include='*.py' --include='*.js' --include='*.ts' \
+      --include='*.php' --include='*.rb' --include='*.java' \
+      --include='*.go' --include='*.env' --include='*.conf' \
+      --include='*.yml' --include='*.yaml' --include='*.json' \
+      --include='*.sh' --include='*.bash' \
+      -l "$pat" "$path" 2>/dev/null | head -5 || true)"
+    if [[ -n "$matches" ]]; then
+      warn "Pattern: ${pat:0:50}"
+      while IFS= read -r f; do
+        attack "  → $f"
+      done <<< "$matches"
+      ((secret_hits++))
+    fi
+  done
+  [[ $secret_hits -eq 0 ]] && ok "No obvious secret patterns found"
+  _sec_end
+
+  # ── TODO / FIXME / HACK Count ──
+  _sec "Code Debt (TODO/FIXME/HACK/XXX)"
+  local todos fixmes hacks
+  todos="$(grep -r --include='*.py' --include='*.js' --include='*.ts' \
+    --include='*.go' --include='*.java' --include='*.rb' \
+    -ic 'TODO' "$path" 2>/dev/null | awk -F: '{s+=$2}END{print s+0}')"
+  fixmes="$(grep -r --include='*.py' --include='*.js' --include='*.ts' \
+    --include='*.go' --include='*.java' --include='*.rb' \
+    -ic 'FIXME' "$path" 2>/dev/null | awk -F: '{s+=$2}END{print s+0}')"
+  hacks="$(grep -r --include='*.py' --include='*.js' --include='*.ts' \
+    --include='*.go' --include='*.java' --include='*.rb' \
+    -ic 'HACK\|XXX' "$path" 2>/dev/null | awk -F: '{s+=$2}END{print s+0}')"
+
+  _row "TODOs"  "$todos"  "$BYLW"
+  _row "FIXMEs" "$fixmes" "$BRED"
+  _row "HACKs/XXX" "$hacks" "$BRED"
+  _sec_end
+
+  # ── File Stats ──
+  _sec "Language / File Statistics"
+  declare -A ext_counts
+  while IFS= read -r f; do
+    local ext="${f##*.}"
+    ext_counts["$ext"]=$(( ${ext_counts["$ext"]:-0} + 1 ))
+  done < <(find "$path" -type f -not -path '*/.git/*' \
+    -not -path '*/node_modules/*' -not -path '*/__pycache__/*' 2>/dev/null)
+
+  for ext in "${!ext_counts[@]}"; do
+    local cnt="${ext_counts[$ext]}"
+    printf "  ${DIM}║${R}  ${BOLD}%-15s${R} ${CYN}%d files${R}\n" ".${ext}" "$cnt"
+  done | sort -t'$' -k2 -rn | head -15
+  _sec_end
+
+  # ── Large Function Detector ──
+  _sec "Large Files (>500 lines — complexity risk)"
+  find "$path" -type f \( -name '*.py' -o -name '*.js' -o -name '*.ts' \
+    -o -name '*.go' -o -name '*.java' -o -name '*.rb' \) \
+    -not -path '*/node_modules/*' \
+    2>/dev/null | while IFS= read -r f; do
+    local lc; lc="$(wc -l < "$f" 2>/dev/null || echo 0)"
+    if [[ $lc -gt 500 ]]; then
+      warn "${lc} lines: $f"
+    fi
+  done
+  _sec_end
+
+  log_audit "codeaudit done $path"
+}
+
+# ═══════════════════════════════════════════════════════════════════
+#  MODULE: SSH AUDIT
+# ═══════════════════════════════════════════════════════════════════
+mod_sshaudit() {
+  _hdr "  🔐  SSH CONFIGURATION AUDIT"
+  log_audit "sshaudit"
+
+  local sshd_config="/etc/ssh/sshd_config"
+  local ssh_config="${HOME}/.ssh/config"
+
+  if [[ ! -f "$sshd_config" ]]; then
+    warn "sshd_config not found at $sshd_config"
+    info "Running user SSH config check instead"
+  else
+    _sec "SSHD Server Configuration"
+    local checks=(
+      "PermitRootLogin:no:CRITICAL"
+      "PasswordAuthentication:no:HIGH"
+      "ChallengeResponseAuthentication:no:MEDIUM"
+      "X11Forwarding:no:LOW"
+      "AllowAgentForwarding:no:LOW"
+      "PermitEmptyPasswords:no:CRITICAL"
+      "MaxAuthTries:3:MEDIUM"
+      "Protocol:2:HIGH"
+      "UsePAM:yes:INFO"
+    )
+
+    for chk in "${checks[@]}"; do
+      local key ideal severity
+      key="${chk%%:*}"; rest="${chk#*:}"; ideal="${rest%%:*}"; severity="${rest##*:}"
+      local actual
+      actual="$(grep -i "^${key}" "$sshd_config" 2>/dev/null | awk '{print $2}' | head -1 || true)"
+
+      if [[ -z "$actual" ]]; then
+        echo -e "  ${DIM}║${R}  ${DIM}[DEFAULT]${R} ${BOLD}${key}${R} = not set (default varies)"
+      elif echo "$actual" | grep -qi "^${ideal}$"; then
+        ok "[${severity}] ${key} = ${actual}"
+      else
+        warn "[${severity}] ${key} = ${actual}  (recommended: ${ideal})"
+      fi
+    done
+    _sec_end
+  fi
+
+  # ── Key Analysis ──
+  _sec "SSH Key Analysis"
+  local ssh_dir="${HOME}/.ssh"
+  if [[ -d "$ssh_dir" ]]; then
+    for key_file in "$ssh_dir"/id_*; do
+      [[ -f "$key_file" ]] || continue
+      [[ "$key_file" == *.pub ]] && continue
+      local perms; perms="$(stat -c '%a' "$key_file" 2>/dev/null || stat -f '%A' "$key_file" 2>/dev/null)"
+      found "Key file: $key_file"
+      if [[ "$perms" != "600" ]]; then
+        warn "  Permissions: ${perms}  (should be 600!)"
+      else
+        ok "  Permissions: ${perms} ✓"
+      fi
+      if _check_cmd ssh-keygen; then
+        local key_type
+        key_type="$(ssh-keygen -l -f "${key_file}.pub" 2>/dev/null | head -1 || echo 'N/A')"
+        info "  $key_type"
+      fi
+    done
+  else
+    info "No .ssh directory found"
+  fi
+  _sec_end
+}
+
+# ═══════════════════════════════════════════════════════════════════
+#  MODULE: GIT SECURITY CHECK
+# ═══════════════════════════════════════════════════════════════════
+mod_gitcheck() {
+  _hdr "  🔍  GIT SECURITY SCANNER"
+
+  if ! git rev-parse --is-inside-work-tree &>/dev/null; then
+    err "Not inside a Git repository"
+    return 1
+  fi
+
+  local root; root="$(git rev-parse --show-toplevel)"
+  log_audit "gitcheck $root"
+
+  # ── Secrets in Git History ──
+  _sec "Secret Patterns in Entire Git History"
+  warn "Scanning ALL commits — this may take a moment on large repos..."
+  echo
+
+  local history_patterns=(
+    "password="
+    "api_key="
+    "apikey="
+    "secret="
+    "access_token="
+    "private_key="
+    "BEGIN RSA PRIVATE"
+    "AKIA[0-9A-Z]"
+    "ghp_"
+    "glpat-"
+  )
+
+  local hist_hits=0
+  for pat in "${history_patterns[@]}"; do
+    local commits
+    commits="$(git log --all --oneline -S "$pat" 2>/dev/null | head -5 || true)"
+    if [[ -n "$commits" ]]; then
+      warn "Pattern '${pat}' found in commits:"
+      while IFS= read -r c; do
+        attack "  $c"
+      done <<< "$commits"
+      ((hist_hits++))
+    fi
+  done
+  [[ $hist_hits -eq 0 ]] && ok "No secret patterns found in git history"
+  _sec_end
+
+  # ── .gitignore check ──
+  _sec ".gitignore Coverage"
+  local required_ignores=(".env" "*.pem" "*.key" "*.p12" "*.pfx"
+    "id_rsa" "id_ecdsa" "*.secret" "config/secrets*"
+    "node_modules/" "__pycache__/" ".DS_Store" "*.log"
+    "dist/" "build/" ".env.local" ".env.production")
+
+  local gi="${root}/.gitignore"
+  if [[ -f "$gi" ]]; then
+    for entry in "${required_ignores[@]}"; do
+      if grep -qF "$entry" "$gi" 2>/dev/null; then
+        ok "Covered: $entry"
+      else
+        warn "Missing from .gitignore: $entry"
+      fi
+    done
+  else
+    err ".gitignore does not exist — create one immediately!"
+  fi
+  _sec_end
+
+  # ── Large files tracked in git ──
+  _sec "Large Objects in Git History"
+  git rev-list --objects --all 2>/dev/null | \
+    git cat-file --batch-check='%(objecttype) %(objectname) %(objectsize) %(rest)' 2>/dev/null | \
+    awk '/^blob/{print $3, $4}' | sort -rn | head -10 | \
+    while read -r size path; do
+      local size_mb=$(( size / 1024 / 1024 ))
+      if [[ $size_mb -gt 0 ]]; then
+        warn "${size_mb}MB: $path"
+      fi
+    done || info "Could not enumerate git objects"
+  _sec_end
+}
+
+# ═══════════════════════════════════════════════════════════════════
+#  MODULE: NETWORK MONITOR
+# ═══════════════════════════════════════════════════════════════════
+mod_netmon() {
+  _hdr "  📡  NETWORK MONITOR"
+
+  _sec "Active Listening Ports"
+  if _check_cmd ss; then
+    printf "  ${DIM}║${R}  ${BOLD}%-8s %-8s %-25s %s${R}\n" \
+      "Proto" "State" "Local Address" "Process"
+    echo -e "  ${DIM}║${R}  $(_line '─' 65)"
+    ss -tulnp 2>/dev/null | grep -v '^Netid' | while IFS= read -r line; do
+      echo -e "  ${DIM}║${R}  ${CYN}${line}${R}"
+    done
+  fi
+  _sec_end
+
+  _sec "Established Connections"
+  if _check_cmd ss; then
+    ss -tnp state established 2>/dev/null | head -20 | while IFS= read -r line; do
+      echo -e "  ${DIM}║${R}  ${GRN}${line}${R}"
+    done
+  fi
+  _sec_end
+
+  _sec "Routing Table"
+  if _check_cmd ip; then
+    ip route 2>/dev/null | while IFS= read -r line; do
+      echo -e "  ${DIM}║${R}  ${DIM}${line}${R}"
+    done
+  fi
+  _sec_end
+}
+
+# ═══════════════════════════════════════════════════════════════════
+#  MODULE: LOG AUDIT
+# ═══════════════════════════════════════════════════════════════════
+mod_logaudit() {
+  _hdr "  📋  LOG FORENSICS & ANOMALY DETECTION"
+  log_info "logaudit started"
+
+  # ── Auth failures ──
+  _sec "Authentication Failures (Last 24h)"
+  local auth_log="/var/log/auth.log"
+  [[ ! -f "$auth_log" ]] && auth_log="/var/log/secure"
+  if [[ -f "$auth_log" ]]; then
+    local fail_count
+    fail_count="$(grep -c 'Failed password\|Invalid user\|authentication failure' \
+      "$auth_log" 2>/dev/null || echo 0)"
+    [[ $fail_count -gt 10 ]] && warn "High auth failure count: $fail_count" || \
+                                 ok  "Auth failures: $fail_count"
+
+    grep 'Failed password\|Invalid user' "$auth_log" 2>/dev/null | \
+      awk '{print $(NF-3)}' | sort | uniq -c | sort -rn | head -10 | \
+      while read -r cnt ip; do
+        [[ $cnt -gt 5 ]] && warn "$cnt failures from: $ip" || \
+                            info "$cnt failures from: $ip"
+      done
+  else
+    info "Auth log not accessible (needs root)"
+  fi
+  _sec_end
+
+  # ── Sudo Usage ──
+  _sec "Recent Sudo Usage"
+  if [[ -f "/var/log/auth.log" ]]; then
+    grep 'sudo' /var/log/auth.log 2>/dev/null | tail -20 | \
+      while IFS= read -r line; do
+        echo -e "  ${DIM}║${R}  ${DIM}${line}${R}"
+      done
+  else
+    info "Sudo logs not accessible"
+  fi
+  _sec_end
+
+  # ── CyberForge own logs ──
+  _sec "CyberForge Audit Trail"
+  if [[ -f "$CF_LOG" ]]; then
+    grep '\[AUDIT\]' "$CF_LOG" | tail -20 | while IFS= read -r line; do
+      echo -e "  ${DIM}║${R}  ${CYN}${line}${R}"
+    done
+  else
+    info "No CyberForge audit log yet"
+  fi
+  _sec_end
+
+  log_info "logaudit done"
+}
+
+# ═══════════════════════════════════════════════════════════════════
+#  MODULE: FIREWALL AUDIT
+# ═══════════════════════════════════════════════════════════════════
+mod_firewall() {
+  _hdr "  🛡️   FIREWALL AUDIT"
+  log_audit "firewall check"
+
+  # ── UFW ──
+  _sec "UFW Status"
+  if _check_cmd ufw; then
+    local ufw_status
+    ufw_status="$(ufw status 2>/dev/null | head -30 || echo 'Permission denied')"
+    if echo "$ufw_status" | grep -q "active"; then
+      ok "UFW is ACTIVE"
+    else
+      warn "UFW is INACTIVE — system may be unprotected!"
+    fi
+    echo "$ufw_status" | tail -n +3 | while IFS= read -r line; do
+      echo -e "  ${DIM}║${R}  ${DIM}${line}${R}"
+    done
+  else
+    info "UFW not installed"
+  fi
+  _sec_end
+
+  # ── iptables ──
+  _sec "iptables Rules"
+  if _check_cmd iptables; then
+    iptables -L --line-numbers 2>/dev/null | head -40 | while IFS= read -r line; do
+      if echo "$line" | grep -q 'DROP\|REJECT'; then
+        echo -e "  ${DIM}║${R}  ${BGRN}${line}${R}"
+      elif echo "$line" | grep -q 'ACCEPT'; then
+        echo -e "  ${DIM}║${R}  ${DIM}${line}${R}"
+      else
+        echo -e "  ${DIM}║${R}  ${DIM}${line}${R}"
+      fi
+    done 2>/dev/null || info "Need root to read iptables"
+  else
+    info "iptables not found"
+  fi
+  _sec_end
+
+  # ── Hardening Tips ──
+  _sec "Hardening Recommendations"
+  local tips=(
+    "Block all inbound except needed ports"
+    "Enable rate limiting for SSH (ufw limit ssh)"
+    "Use fail2ban to auto-ban brute-force IPs"
+    "Whitelist outbound to only required destinations"
+    "Enable logging for DROPPED packets (iptables -A INPUT -j LOG)"
+    "Review rules regularly — remove unused ACCEPT rules"
+    "Consider nftables as a modern iptables replacement"
+  )
+  local i=1
+  for tip in "${tips[@]}"; do
+    printf "  ${DIM}║${R}  ${BBLU}%d.${R} %s\n" "$i" "$tip"
+    ((i++))
+  done
+  _sec_end
+}
+
+# ═══════════════════════════════════════════════════════════════════
+#  MODULE: API DEBUG
+# ═══════════════════════════════════════════════════════════════════
+mod_apidebug() {
+  local url="${1:-}"
+  local method="${2:-GET}"
+  local data="${3:-}"
+
+  [[ -z "$url" ]] && { err "Usage: cyberforge.sh apidebug <url> [METHOD] [body]"; return 1; }
+  if ! _require curl; then return 1; fi
+
+  _hdr "  📡  REST API DEBUGGER"
+  log_info "apidebug $method $url"
+
+  _sec "Request"
+  _row "URL"    "$url"    "$BCYN"
+  _row "Method" "$method" "$BYLW"
+  [[ -n "$data" ]] && _row "Body" "${data:0:60}..." "$DIM"
+  _sec_end
+
+  _sec "Response"
+  local resp_file; resp_file="$(mktemp /tmp/cf_api_XXXXXX)"
+  local hdr_file;  hdr_file="$(mktemp /tmp/cf_hdr_XXXXXX)"
+  local timing
+
+  if [[ -n "$data" ]]; then
+    timing="$(curl -s -w "%{time_total}" -o "$resp_file" -D "$hdr_file" \
+      -X "$method" -H "Content-Type: application/json" \
+      -d "$data" --max-time 15 "$url" 2>/dev/null || echo 0)"
+  else
+    timing="$(curl -s -w "%{time_total}" -o "$resp_file" -D "$hdr_file" \
+      -X "$method" --max-time 15 "$url" 2>/dev/null || echo 0)"
+  fi
+
+  local http_code content_type
+  http_code="$(head -1 "$hdr_file" 2>/dev/null | grep -oE '[0-9]{3}' | head -1)"
+  content_type="$(grep -i 'content-type' "$hdr_file" 2>/dev/null | cut -d' ' -f2- | tr -d '\r')"
+
+  local code_color
+  case "${http_code:0:1}" in
+    2) code_color="$BGRN" ;;
+    3) code_color="$BCYN" ;;
+    4) code_color="$BYLW" ;;
+    5) code_color="$BRED" ;;
+    *) code_color="$DIM" ;;
+  esac
+
+  _row "Status Code"   "${http_code}" "$code_color"
+  _row "Content-Type"  "${content_type:-N/A}" "$CYN"
+  _row "Response Time" "${timing}s" "$BYLW"
+  _row "Body Size"     "$(wc -c < "$resp_file" 2>/dev/null)B" "$DIM"
+  echo
+  echo -e "  ${DIM}Response Preview (first 30 lines):${R}"
+  echo -e "  $(_line '─' 70)"
+  head -30 "$resp_file" 2>/dev/null | while IFS= read -r line; do
+    echo -e "  ${CYN}${line}${R}"
+  done
+  echo -e "  $(_line '─' 70)"
+
+  rm -f "$resp_file" "$hdr_file"
+  _sec_end
+}
+
+# ═══════════════════════════════════════════════════════════════════
+#  MODULE: DOCKER AUDIT
+# ═══════════════════════════════════════════════════════════════════
+mod_dockeraudit() {
+  _hdr "  🐳  DOCKER SECURITY AUDIT"
+
+  if ! _check_cmd docker; then
+    warn "Docker not installed or not in PATH"
+    return 0
+  fi
+
+  log_audit "dockeraudit"
+
+  # ── Running Containers ──
+  _sec "Running Containers"
+  docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}" \
+    2>/dev/null | while IFS= read -r line; do
+    echo -e "  ${DIM}║${R}  ${CYN}${line}${R}"
+  done
+  _sec_end
+
+  # ── Root containers ──
+  _sec "Containers Running as Root"
+  docker ps -q 2>/dev/null | while IFS= read -r cid; do
+    local name user
+    name="$(docker inspect --format '{{.Name}}' "$cid" 2>/dev/null | tr -d '/')"
+    user="$(docker inspect --format '{{.Config.User}}' "$cid" 2>/dev/null)"
+    if [[ -z "$user" ]] || [[ "$user" == "root" ]] || [[ "$user" == "0" ]]; then
+      warn "Container '${name}' running as ROOT — security risk!"
+    else
+      ok "Container '${name}' user: $user"
+    fi
+  done
+  _sec_end
+
+  # ── Privileged containers ──
+  _sec "Privileged Containers"
+  docker ps -q 2>/dev/null | while IFS= read -r cid; do
+    local name priv
+    name="$(docker inspect --format '{{.Name}}' "$cid" 2>/dev/null | tr -d '/')"
+    priv="$(docker inspect --format '{{.HostConfig.Privileged}}' "$cid" 2>/dev/null)"
+    if [[ "$priv" == "true" ]]; then
+      warn "PRIVILEGED container: ${name}  ← HIGH RISK"
+    else
+      ok "${name}: Not privileged"
+    fi
+  done
+  _sec_end
+
+  # ── Exposed ports to 0.0.0.0 ──
+  _sec "Ports Exposed to All Interfaces (0.0.0.0)"
+  docker ps --format "{{.Ports}}" 2>/dev/null | grep '0.0.0.0' | while IFS= read -r p; do
+    warn "Exposed to all interfaces: $p"
+  done
+  _sec_end
+}
+
+# ═══════════════════════════════════════════════════════════════════
+#  MODULE: ENV CHECK
+# ═══════════════════════════════════════════════════════════════════
+mod_envcheck() {
+  _hdr "  🧪  DEVELOPMENT ENVIRONMENT HEALTH"
+  log_info "envcheck"
+
+  local tools=(
+    "git:Version Control"
+    "docker:Containerization"
+    "kubectl:Kubernetes CLI"
+    "terraform:Infrastructure as Code"
+    "ansible:Configuration Management"
+    "python3:Python Runtime"
+    "node:Node.js Runtime"
+    "go:Go Language"
+    "java:Java Runtime"
+    "rustc:Rust Language"
+    "gcc:C Compiler"
+    "make:Build Tool"
+    "curl:HTTP Client"
+    "wget:HTTP Downloader"
+    "jq:JSON Processor"
+    "nmap:Network Scanner"
+    "openssl:SSL/TLS Toolkit"
+    "vim:Text Editor"
+    "tmux:Terminal Multiplexer"
+    "htop:Process Monitor"
+  )
+
+  _sec "Installed Tools"
+  for entry in "${tools[@]}"; do
+    local cmd desc
+    cmd="${entry%%:*}"
+    desc="${entry##*:}"
+    if _check_cmd "$cmd"; then
+      local ver; ver="$(${cmd} --version 2>&1 | head -1 | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1 || echo '')"
+      ok "$(printf '%-20s' "$desc ($cmd)")${ver:+ v$ver}"
+    else
+      warn "$(printf '%-20s' "$desc ($cmd)")NOT INSTALLED"
+    fi
+  done
+  _sec_end
+}
+
+# ═══════════════════════════════════════════════════════════════════
+#  MODULE: DISK AUDIT
+# ═══════════════════════════════════════════════════════════════════
+mod_diskaudit() {
+  _hdr "  💾  DISK AUDIT"
+  log_info "diskaudit"
+
+  _sec "Disk Usage by Partition"
+  df -h 2>/dev/null | grep -v tmpfs | while IFS= read -r line; do
+    local usage_pct; usage_pct="$(echo "$line" | awk '{print $5}' | tr -d '%')"
+    if [[ "$usage_pct" =~ ^[0-9]+$ ]] && [[ $usage_pct -gt 80 ]]; then
+      echo -e "  ${DIM}║${R}  ${BRED}${line}${R}  ← HIGH USAGE"
+    elif [[ "$usage_pct" =~ ^[0-9]+$ ]] && [[ $usage_pct -gt 60 ]]; then
+      echo -e "  ${DIM}║${R}  ${BYLW}${line}${R}"
+    else
+      echo -e "  ${DIM}║${R}  ${DIM}${line}${R}"
+    fi
+  done
+  _sec_end
+
+  _sec "Top 15 Largest Files (entire system)"
+  find / -type f -size +50M \
+    -not -path '/proc/*' \
+    -not -path '/sys/*' \
+    -not -path '/dev/*' \
+    2>/dev/null | head -15 | \
+    while IFS= read -r f; do
+      local sz; sz="$(du -sh "$f" 2>/dev/null | cut -f1)"
+      warn "${sz}  ${f}"
+    done
+  _sec_end
+
+  _sec "Top 10 Largest Directories"
+  du -sh /* 2>/dev/null | sort -rh | head -10 | while IFS= read -r line; do
+    echo -e "  ${DIM}║${R}  ${CYN}${line}${R}"
+  done
+  _sec_end
+}
+
+# ═══════════════════════════════════════════════════════════════════
+#  MODULE: FULL REPORT
+# ═══════════════════════════════════════════════════════════════════
+mod_report() {
+  local ts; ts="$(date '+%Y%m%d_%H%M%S')"
+  local report="${CF_REPORTS}/cyberforge_report_${ts}.txt"
+  mkdir -p "$CF_REPORTS"
+
+  info "Generating full security report..."
+  info "Output: $report"
+  echo
+
+  {
+    echo "================================================================="
+    echo " CyberForge Security Report"
+    echo " Developer : Demiyan Dissanayake"
+    echo " Generated : $(date)"
+    echo " Host      : $(hostname)"
+    echo "================================================================="
+    mod_sysinfo
+    mod_procmon
+    mod_netmon
+    mod_sshaudit
+    mod_firewall
+    mod_diskaudit
+    mod_envcheck
+    mod_logaudit
+    if git rev-parse --is-inside-work-tree &>/dev/null 2>&1; then
+      mod_gitcheck
+    fi
+  } 2>&1 | sed 's/\x1b\[[0-9;]*m//g' > "$report"
+
+  ok "Report saved: $report"
+  info "View with: cat $report  |  or  less -R $report"
+  log_info "report generated $report"
+}
+
+# ═══════════════════════════════════════════════════════════════════
+#  MODULE: UPDATE CHECK
+# ═══════════════════════════════════════════════════════════════════
+mod_update() {
+  _hdr "  🚀  UPDATE CHECKER"
+  info "Checking for CyberForge updates..."
+
+  if _check_cmd curl; then
+    local remote_ver
+    remote_ver="$(curl -sL --max-time 8 \
+      "https://raw.githubusercontent.com/demiyan-dissanayake/cyberforge/main/VERSION" \
+      2>/dev/null || echo "N/A")"
+
+    _row "Current Version" "$TOOL_VERSION" "$CYN"
+    _row "Remote Version"  "${remote_ver:-N/A}" "$BGRN"
+
+    if [[ "$remote_ver" != "$TOOL_VERSION" ]] && [[ "$remote_ver" != "N/A" ]]; then
+      warn "Update available! Run: git pull origin main"
+    else
+      ok "CyberForge is up to date"
+    fi
+  else
+    warn "curl not available — cannot check for updates"
+  fi
+}
+
+# ═══════════════════════════════════════════════════════════════════
+#  MAIN
+# ═══════════════════════════════════════════════════════════════════
+main() {
+  _init_dirs
+  local cmd="${1:-help}"
+  shift || true
+
+  case "$cmd" in
+    # ── Cyber Security ──
+    recon)       mod_recon       "$@" ;;
+    portscan)    mod_portscan    "$@" ;;
+    vulnscan)    mod_vulnscan    "$@" ;;
+    sslenum)     mod_sslenum     "$@" ;;
+    dnsrecon)    mod_dnsrecon    "$@" ;;
+    webaudit)    mod_webaudit    "$@" ;;
+    hashcrack)   mod_hashcrack   "$@" ;;
+    passgen)     mod_passgen     "$@" ;;
+    encodedec)   mod_encodedec   "$@" ;;
+    netmon)      mod_netmon      "$@" ;;
+    logaudit)    mod_logaudit    "$@" ;;
+    firewall)    mod_firewall    "$@" ;;
+    # ── Software Engineering ──
+    sysinfo)     mod_sysinfo     "$@" ;;
+    procmon)     mod_procmon     "$@" ;;
+    diskaudit)   mod_diskaudit   "$@" ;;
+    sshaudit)    mod_sshaudit    "$@" ;;
+    codeaudit)   mod_codeaudit   "$@" ;;
+    depcheck)    mod_envcheck    "$@" ;;
+    apidebug)    mod_apidebug   "$@" ;;
+    envcheck)    mod_envcheck    "$@" ;;
+    dockeraudit) mod_dockeraudit "$@" ;;
+    gitcheck)    mod_gitcheck    "$@" ;;
+    # ── Utility ──
+    report)      mod_report      "$@" ;;
+    update)      mod_update      "$@" ;;
+    version)
+      _banner
+      echo -e "  ${BOLD}${TOOL_NAME}${R} v${TOOL_VERSION}"
+      echo -e "  ${DIM}Developer : ${TOOL_AUTHOR}${R}"
+      echo -e "  ${DIM}GitHub    : ${TOOL_GITHUB}${R}"
+      echo -e "  ${DIM}Year      : ${TOOL_YEAR}${R}"
+      ;;
+    help|--help|-h|"")
+      _help
+      ;;
+    *)
+      err "Unknown command: $cmd"
+      echo
+      _help
+      exit 1
+      ;;
+  esac
+}
+
+main "$@"
