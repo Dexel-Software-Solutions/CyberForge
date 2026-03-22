@@ -1,17 +1,16 @@
 <div align="center">
 
-<!-- Animated Banner SVG -->
-<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=14&duration=2000&pause=500&color=00E676&center=true&vCenter=true&multiline=true&repeat=true&width=700&height=100&lines=%E2%96%88%E2%96%88%E2%96%88%E2%96%88%E2%96%88%E2%96%88%E2%95%97%E2%96%88%E2%96%88%E2%95%97+++%E2%96%88%E2%96%88%E2%95%97%E2%96%88%E2%96%88%E2%96%88%E2%96%88%E2%96%88%E2%96%88%E2%95%97+%E2%96%88%E2%96%88%E2%96%88%E2%96%88%E2%96%88%E2%96%88%E2%96%88%E2%95%97%E2%96%88%E2%96%88%E2%96%88%E2%96%88%E2%96%88%E2%96%88%E2%95%97;Advanced+Software+Engineering+%26+Cyber+Security+Toolkit" alt="CyberForge" />
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=0,2,2,5,30&height=200&section=header&text=CyberForge&fontSize=80&fontColor=00E676&animation=twinkling&fontAlignY=35&desc=Advanced%20Security%20%26%20Software%20Engineering%20Toolkit&descSize=18&descAlignY=58&descColor=ffffff" width="100%"/>
 
-<!-- Animated typing -->
-<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=22&duration=3000&pause=1000&color=00E676&center=true&vCenter=true&width=600&lines=CyberForge+v2.0.0+%F0%9F%94%A5;Pure+Bash+Security+Toolkit;Recon+%7C+Scan+%7C+Audit+%7C+Crack;FOR+AUTHORIZED+USE+ONLY" alt="Typing SVG" />
+<br>
+
+<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=22&duration=3000&pause=1000&color=00E676&center=true&vCenter=true&width=600&lines=CyberForge+v2.0.0+%F0%9F%94%A5;Pure+Bash+Security+Toolkit;Recon+%7C+Scan+%7C+Audit+%7C+Crack;21+Modules.+Zero+Dependencies.;FOR+AUTHORIZED+USE+ONLY" alt="Typing SVG" />
 
 <br><br>
 
-<!-- Badges -->
-[![Version](https://img.shields.io/badge/version-2.0.0-red.svg?style=for-the-badge&logo=github)](https://github.com/demiyan-dissanayake/cyberforge)
+[![Version](https://img.shields.io/badge/version-2.0.0-red.svg?style=for-the-badge&logo=github)](https://github.com/Dexel-Software-Solutions/CyberForge)
 [![Shell](https://img.shields.io/badge/shell-bash%205%2B-brightgreen.svg?style=for-the-badge&logo=gnu-bash)](https://www.gnu.org/software/bash/)
-[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20WSL-blue.svg?style=for-the-badge&logo=linux)]()
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20WSL-blue.svg?style=for-the-badge&logo=linux)](https://github.com/Dexel-Software-Solutions/CyberForge)
 [![License](https://img.shields.io/badge/license-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 [![Author](https://img.shields.io/badge/author-Demiyan%20Dissanayake-purple.svg?style=for-the-badge&logo=github)](https://github.com/Dexel-Software-Solutions)
 
@@ -24,14 +23,10 @@
 
 ---
 
-<!-- Animated wave separator -->
-<img src="https://capsule-render.vercel.app/api?type=waving&color=00E676&height=80&section=header&text=&fontSize=0" width="100%"/>
-
 ## 🔥 What is CyberForge?
 
-**CyberForge** is a pure-Bash advanced security and software engineering toolkit — zero Python, zero Ruby, zero Node required. One script, 21 modules, full power.
+**CyberForge** is a pure-Bash advanced security and software engineering toolkit — zero Python, zero Ruby, zero Node required. One script, **21 modules**, full power.
 
-<!-- Animated stats -->
 <div align="center">
 
 ![Modules](https://img.shields.io/badge/Modules-21-00e676?style=flat-square&logo=target)
@@ -68,13 +63,13 @@
 
 ```bash
 # Option 1 — Clone (Recommended)
-git clone https://github.com/demiyan-dissanayake/cyberforge.git
-cd cyberforge
+git clone https://github.com/Dexel-Software-Solutions/CyberForge.git
+cd CyberForge
 chmod +x cyberforge.sh
 ./cyberforge.sh help
 
 # Option 2 — Direct Download
-curl -O https://raw.githubusercontent.com/demiyan-dissanayake/cyberforge/main/cyberforge.sh
+curl -O https://raw.githubusercontent.com/Dexel-Software-Solutions/CyberForge/main/cyberforge.sh
 chmod +x cyberforge.sh
 
 # Option 3 — Global Install
@@ -119,6 +114,7 @@ cyberforge help
 
 <details>
 <summary><b>📡 recon — Passive & Active Reconnaissance</b></summary>
+<br>
 
 ```bash
 ./cyberforge.sh recon <host|domain|ip>
@@ -133,6 +129,7 @@ cyberforge help
 
 <details>
 <summary><b>🛰️ portscan — TCP Port Scanner</b></summary>
+<br>
 
 ```bash
 ./cyberforge.sh portscan <host> [port-range]
@@ -149,6 +146,7 @@ cyberforge help
 
 <details>
 <summary><b>🔒 sslenum — SSL/TLS Analyzer</b></summary>
+<br>
 
 ```bash
 ./cyberforge.sh sslenum <host> [port]
@@ -164,6 +162,7 @@ cyberforge help
 
 <details>
 <summary><b>🌐 dnsrecon — DNS Enumeration</b></summary>
+<br>
 
 ```bash
 ./cyberforge.sh dnsrecon <domain>
@@ -177,6 +176,7 @@ cyberforge help
 
 <details>
 <summary><b>🕵️ webaudit — Web Application Security Audit</b></summary>
+<br>
 
 ```bash
 ./cyberforge.sh webaudit <url>
@@ -192,6 +192,7 @@ cyberforge help
 
 <details>
 <summary><b>💥 vulnscan — Vulnerability Scanner</b></summary>
+<br>
 
 ```bash
 ./cyberforge.sh vulnscan <host>
@@ -207,6 +208,7 @@ cyberforge help
 
 <details>
 <summary><b>🔑 hashcrack — Hash Identifier & Cracker</b></summary>
+<br>
 
 ```bash
 ./cyberforge.sh hashcrack auto <hash>
@@ -222,6 +224,7 @@ cyberforge help
 
 <details>
 <summary><b>🔐 passgen — Secure Password Generator</b></summary>
+<br>
 
 ```bash
 ./cyberforge.sh passgen [length] [mode]
@@ -238,6 +241,7 @@ cyberforge help
 
 <details>
 <summary><b>🔄 encodedec — Encode / Decode / Hash</b></summary>
+<br>
 
 ```bash
 ./cyberforge.sh encodedec <encode|decode> <scheme> <text>
@@ -252,6 +256,7 @@ cyberforge help
 
 <details>
 <summary><b>💻 sysinfo — System Fingerprint</b></summary>
+<br>
 
 ```bash
 ./cyberforge.sh sysinfo
@@ -263,6 +268,7 @@ OS, kernel, CPU, memory, network interfaces, logged-in users.
 
 <details>
 <summary><b>🔍 codeaudit — Static Code Analysis</b></summary>
+<br>
 
 ```bash
 ./cyberforge.sh codeaudit [/path/to/project]
@@ -277,6 +283,7 @@ OS, kernel, CPU, memory, network interfaces, logged-in users.
 
 <details>
 <summary><b>🐳 dockeraudit — Docker Security Audit</b></summary>
+<br>
 
 ```bash
 ./cyberforge.sh dockeraudit
@@ -291,6 +298,7 @@ OS, kernel, CPU, memory, network interfaces, logged-in users.
 
 <details>
 <summary><b>📜 gitcheck — Git Security Scanner</b></summary>
+<br>
 
 ```bash
 ./cyberforge.sh gitcheck
@@ -304,6 +312,7 @@ OS, kernel, CPU, memory, network interfaces, logged-in users.
 
 <details>
 <summary><b>📊 report — Full Security Report</b></summary>
+<br>
 
 ```bash
 ./cyberforge.sh report
@@ -389,22 +398,26 @@ Please follow the existing code style and add documentation for new modules.
 
 ---
 
-<!-- Animated footer wave -->
-<img src="https://capsule-render.vercel.app/api?type=waving&color=00E676&height=80&section=footer" width="100%"/>
+## 📈 Activity
 
 <div align="center">
 
-<!-- Activity graph -->
-[![Activity](https://github-readme-activity-graph.vercel.app/graph?username=demiyan-dissanayake&theme=react-dark&bg_color=0a0e14&color=00e676&line=00e676&point=ffffff&area=true&hide_border=true)](https://github.com/demiyan-dissanayake)
+[![Activity Graph](https://github-readme-activity-graph.vercel.app/graph?username=demiyan-dissanayake&theme=react-dark&bg_color=0a0e14&color=00e676&line=00e676&point=ffffff&area=true&hide_border=true)](https://github.com/demiyan-dissanayake)
 
-<br>
+</div>
+
+---
+
+<div align="center">
 
 **⭐ Star this repo if you find it useful!**
 
 Made with ❤️ and pure Bash by [Demiyan Dissanayake](https://github.com/Dexel-Software-Solutions)
 
-[![GitHub stars](https://img.shields.io/github/stars/demiyan-dissanayake/cyberforge?style=social)](https://github.com/demiyan-dissanayake/cyberforge)
-[![GitHub forks](https://img.shields.io/github/forks/demiyan-dissanayake/cyberforge?style=social)](https://github.com/demiyan-dissanayake/cyberforge)
-[![GitHub watchers](https://img.shields.io/github/watchers/demiyan-dissanayake/cyberforge?style=social)](https://github.com/demiyan-dissanayake/cyberforge)
+[![GitHub stars](https://img.shields.io/github/stars/Dexel-Software-Solutions/CyberForge?style=social)](https://github.com/Dexel-Software-Solutions/CyberForge)
+[![GitHub forks](https://img.shields.io/github/forks/Dexel-Software-Solutions/CyberForge?style=social)](https://github.com/Dexel-Software-Solutions/CyberForge)
+[![GitHub watchers](https://img.shields.io/github/watchers/Dexel-Software-Solutions/CyberForge?style=social)](https://github.com/Dexel-Software-Solutions/CyberForge)
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=0,2,2,5,30&height=100&section=footer" width="100%"/>
 
 </div>
